@@ -2,13 +2,11 @@ from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import requests
 import openai
+from key import KAKAO_API_KEY, OPENAI_API_KEY, WEATHER_API_KEY
 
 app = Flask(__name__)
 
 # Kakao 및 OpenAI API 키 설정
-KAKAO_API_KEY = "50da871683bc27b984027413101cb4c6"
-OPENAI_API_KEY = "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"
-WEATHER_API_KEY = "c6faba49c100d7d5920081afb7cae83d"
 
 openai.api_key = OPENAI_API_KEY  # OpenAI API 키 설정
 
