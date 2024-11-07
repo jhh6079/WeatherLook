@@ -115,6 +115,7 @@
   </style>
   <script>
     let clothingRecommendation = "";
+    let lastAnswer = "";
     const addressData = {{ address_data | tojson }};
 
     function updateGu() {
@@ -238,6 +239,16 @@
       const chatSidebar = document.getElementById("chatSidebar");
       chatSidebar.style.right = chatSidebar.style.right === "0px" ? "-300px" : "0px";
     }
+    function saveClothing() {
+      fetch('/save_clothing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clothing: lastAnswer })
+      })
+              .then(response => response.json())
+              .then(data => alert(data.message))
+              .catch(error => console.error('오류 발생:', error));
+    }
 
     async function askQuestion() {
       const userQuestion = document.getElementById("userQuestion").value;
@@ -259,6 +270,7 @@
         });
 
         const data = await response.json();
+        lastAnswer = data.answer;
         if (response.ok) {
           chatResponse.innerHTML += `<p><strong>응답:</strong> ${data.answer}</p>`;
         } else {
@@ -285,6 +297,7 @@
       citySelect.addEventListener("change", updateGu);
       document.getElementById("gu").addEventListener("change", updateDong);
     };
+
   </script>
 </head>
 <body>
@@ -301,6 +314,7 @@
   <div class="chat-container">
     <input type="text" id="userQuestion" placeholder="궁금한 점을 입력하세요">
     <button onclick="askQuestion()">질문하기</button>
+    <button onclick="saveClothing()" id="saveClothingButton">결정하기</button>
     <div id="chatResponse" class="chat-response"></div>
   </div>
 </div>
