@@ -144,7 +144,7 @@ def ask_question():
         response = openai.ChatCompletion.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": f"당신은 날씨 전문가입니다. {additional_info}"},
+                {"role": "system", "content": f"당신은 날씨 전문가입니다. {additional_info} 날씨관련 질문 말고 다른 질문에는 대답하지마 "},
                 {"role": "user", "content": question},
             ]
         )
