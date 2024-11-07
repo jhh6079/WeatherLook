@@ -115,7 +115,7 @@
   </style>
   <script>
     let clothingRecommendation = "";
-    const addressData = {{ address_data|tojson }};
+    const addressData = {{ address_data | tojson }};
 
     function updateGu() {
       const city = document.getElementById("city").value;
@@ -220,9 +220,12 @@
         </div>
         <div class="box">
           <h2>날씨 정보</h2>
-          <p>온도: ${weatherData.main.temp}°C</p>
-          <p>날씨: ${weatherData.weather[0].description}</p>
-          <p>풍속: ${weatherData.wind.speed} m/s</p>
+          <p>온도: ${weatherData.temperature}°C</p>
+          <p>날씨 상태: ${weatherData.sky_status}</p>
+          <p>풍속: ${weatherData.wind_speed} m/s</p>
+          <p>강수 형태: ${weatherData.precipitation_type} m/s</p>
+          <p>강수 확률: ${weatherData.precipitation_probability}%</p>
+          <p>습도: ${weatherData.humidity}%</p>
         </div>
         <div class="box">
           <h2>추천 의류</h2>

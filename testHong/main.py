@@ -1,3 +1,5 @@
+import math
+
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import requests
@@ -65,7 +67,49 @@ def get_coords():
 
 
 # 전역 변수로 날씨 정보와 추천 의류 저장
-# 전역 변수로 날씨 정보와 추천 의류 저장
+
+import math
+
+
+def convert_to_grid(lat, lon):
+    # 모든 상수를 float으로 설정
+    RE = 6371.00877  # 지구 반경(km)
+    GRID = 5.0  # 격자 간격(km)
+    SLAT1 = 30.0  # 투영 위도1(degree)
+    SLAT2 = 60.0  # 투영 위도2(degree)
+    OLON = 126.0  # 기준점 경도(degree)
+    OLAT = 38.0  # 기준점 위도(degree)
+    XO = 43.0  # 기준점 X좌표(GRID)
+    YO = 136.0  # 기준점 Y좌표(GRID)
+
+    DEGRAD = math.pi / 180.0
+    re = RE / GRID
+    slat1 = SLAT1 * DEGRAD
+    slat2 = SLAT2 * DEGRAD
+    olon = OLON * DEGRAD
+    olat = OLAT * DEGRAD
+
+    sn = math.tan(math.pi * 0.25 + slat2 * 0.5) / math.tan(math.pi * 0.25 + slat1 * 0.5)
+    sn = math.log(math.cos(slat1) / math.cos(slat2)) / math.log(sn)
+    sf = math.tan(math.pi * 0.25 + slat1 * 0.5)
+    sf = math.pow(sf, sn) * math.cos(slat1) / sn
+    ro = math.tan(math.pi * 0.25 + olat * 0.5)
+    ro = re * sf / math.pow(ro, sn)
+
+    ra = math.tan(math.pi * 0.25 + lat * DEGRAD * 0.5)
+    ra = re * sf / math.pow(ra, sn)
+    theta = lon * DEGRAD - olon
+    if theta > math.pi:
+        theta -= 2.0 * math.pi
+    if theta < -math.pi:
+        theta += 2.0 * math.pi
+    theta *= sn
+
+    nx = int(math.floor(ra * math.sin(theta) + XO + 0.5))
+    ny = int(math.floor(ro - ra * math.cos(theta) + YO + 0.5))
+    return nx, ny
+
+
 weather_info = {}
 clothing_recommendation = ""
 
@@ -75,29 +119,108 @@ def get_weather():
     global weather_info, clothing_recommendation  # 전역 변수 사용
     try:
         data = request.json
-        lat, lon = data['lat'], data['lon']
+        lat, lon = float(data['lat']), float(data['lon'])  # 위도, 경도를 float로 변환
 
-        url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_API_KEY}&units=metric&lang=kr"
-        response = requests.get(url)
+        # 위도/경도를 격자 좌표로 변환
+        nx, ny = convert_to_grid(lat, lon)
+
+        # 현재 날짜와 시간 설정
+        from datetime import datetime, timedelta
+
+        # 현재 시간
+        now = datetime.now()
+
+        # 오늘 날짜 (기상청 API 형식)
+        base_date = now.strftime("%Y%m%d")
+
+        # 현재 시각에 맞는 base_time 설정 (가장 가까운 발표 시각을 기준으로 설정)
+        if now.hour < 5:
+            base_time = "2300"
+            base_date = (now - timedelta(days=1)).strftime("%Y%m%d")
+        elif now.hour < 11:
+            base_time = "0500"
+        elif now.hour < 17:
+            base_time = "1100"
+        elif now.hour < 23:
+            base_time = "1700"
+        else:
+            base_time = "2300"
+
+        # 현재 시간에 가장 가까운 정각을 forecast_time으로 설정
+        if now.minute >= 30:
+            forecast_time = (now + timedelta(hours=1)).replace(minute=0).strftime("%H%M")
+        else:
+            forecast_time = now.replace(minute=0).strftime("%H%M")
+        print(forecast_time)
+        # 기상청 API URL 생성
+        url = f"http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst"
+        params = {
+            "serviceKey": WEATHER_API_KEY,
+            "numOfRows": 100,
+            "pageNo": 1,
+            "dataType": "JSON",
+            "base_date": base_date,
+            "base_time": base_time,
+            "nx": nx,
+            "ny": ny,
+            "fcstTime": forecast_time  # 가장 가까운 정각으로 설정된 예보 시각
+        }
+
+        response = requests.get(url, params=params)
 
         if response.status_code == 200:
             weather_data = response.json()
-            temp = weather_data['main']['temp']
-            wind_speed = weather_data['wind']['speed']
+            items = weather_data['response']['body']['items']['item']
 
-            # 추천 의류 생성
-            clothing_recommendation = get_clothing_recommendation(temp, wind_speed)
-            weather_data['clothing_recommendation'] = clothing_recommendation
-
-            # 날씨 정보를 전역 변수에 저장
-            weather_info = {
-                'temperature': temp,
-                'description': weather_data['weather'][0]['description'],
-                'wind_speed': wind_speed,
-                'clothing_recommendation': clothing_recommendation
+            # 필요한 데이터 추출 (TMP, WSD, SKY, PTY, POP, REH)
+            temp = next(item['fcstValue'] for item in items if item['category'] == 'TMP')
+            wind_speed = next(item['fcstValue'] for item in items if item['category'] == 'WSD')
+            sky_status = next(item['fcstValue'] for item in items if item['category'] == 'SKY')
+            precipitation_type = next(item['fcstValue'] for item in items if item['category'] == 'PTY')
+            precipitation_probability = next(item['fcstValue'] for item in items if item['category'] == 'POP')
+            humidity = next(item['fcstValue'] for item in items if item['category'] == 'REH')
+            sky_status_map = {
+                '1': "맑음",
+                '3': "구름 많음",
+                '4': "흐림",
+                '5': "빗방울",
+                '6': "빗방울눈날림",
+                '7': "눈날림"
             }
+            precipitation_type_map = {
+                '0': "없음",
+                '1': "비",
+                '2': "비/눈",
+                '3': "눈"
+            }
+            sky_status_str = sky_status_map.get(sky_status, "알 수 없음")
+            precipitation_type_str = precipitation_type_map.get(precipitation_type, "알 수 없음")
 
-            return jsonify(weather_data)
+            # TMP: 기온 (섭씨 단위)
+            # •	WSD: 풍속 (m/s)
+            # •	SKY: 하늘 상태 (1: 맑음, 3: 구름 많음, 4: 흐림,5 빗방울 6 빗방울눈날림 7눈날림)
+            # •	PTY: 강수 형태 (0: 없음, 1: 비, 2: 비/눈, 3: 눈)
+            # •	POP: 강수 확률 (%)
+            # •	REH: 습도 (%)
+            # •	SNO: 적설 상태
+            # 추출한 정보를 JSON 형태로 반환
+
+            weather_info = {
+                'temperature': temp,  # 기온
+                'wind_speed': wind_speed,  # 풍속
+                'sky_status': sky_status_str,  # 하늘 상태
+                'precipitation_type': precipitation_type_str,  # 강수 형태
+                'precipitation_probability': precipitation_probability,  # 강수 확률
+                'humidity': humidity  # 습도
+            }
+            print(weather_info)
+            print(weather_data)
+
+            recommendation = get_clothing_recommendation(temp, wind_speed, sky_status_str, precipitation_probability)
+            weather_info['clothing_recommendation'] = recommendation
+            print(weather_data)
+
+            return jsonify(weather_info)
         else:
             return jsonify({'error': 'Weather data not found'}), 404
 
@@ -106,9 +229,9 @@ def get_weather():
         return jsonify({'error': '서버 오류가 발생했습니다.'}), 500
 
 
-def get_clothing_recommendation(temp, wind_speed):
+def get_clothing_recommendation(temp, wind_speed, sky_status_str, precipitation_probability):
     prompt = (
-        f"현재 온도는 {temp}도이고, 풍속은 {wind_speed} m/s 이야 "
+        f"현재 온도는 {temp}도이고, 풍속은 {wind_speed} m/s 이야 날씨는{sky_status_str}이고 강수확률은 {precipitation_probability}%야 "
         "설명은 말고 체감 온도만 보여주고 체감온도에 맞는 적절한 의류를 추천해줘"
     )
 
@@ -122,18 +245,18 @@ def get_clothing_recommendation(temp, wind_speed):
 
     return response.choices[0].message['content']
 
+
 @app.route('/ask_question', methods=['POST'])
 def ask_question():
     global weather_info  # 전역 변수 사용
     try:
         data = request.json
         question = data['question']
-
         # 날씨 정보와 관련된 질문 처리
         additional_info = ""
         if weather_info:
             temperature = weather_info['temperature']
-            description = weather_info['description']
+            description = weather_info['sky_status']
             wind_speed = weather_info['wind_speed']
             clothing_recommendation = weather_info['clothing_recommendation']
 
@@ -154,6 +277,7 @@ def ask_question():
     except Exception as e:
         print(f"오류 발생: {e}")
         return jsonify({"error": "서버 오류가 발생했습니다."}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
