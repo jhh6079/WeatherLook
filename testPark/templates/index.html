@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>의류 추천 시스템</title>
@@ -15,20 +16,32 @@
       background: linear-gradient(135deg, #87CEEB, #f0f8ff);
     }
 
+    body.blurred .container {
+        filter: blur(5px);
+        transition: filter 0.3s ease;
+    }
+
+    #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* 반투명 검은색 */
+        display: none; /* 기본적으로 숨김 */
+        z-index: 999; /* 채팅창 바로 아래 */
+        transition: opacity 0.3s ease;
+    }
+
     .container {
       text-align: center;
       background-color: rgba(255, 255, 255, 0.9);
       padding: 30px;
       border-radius: 30px;
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-      width: 400px;
+      width: 600px;
       transition: transform 0.3s ease-in-out;
       animation: slideIn 0.5s ease-out;
-    }
-
-    @keyframes slideIn {
-      from { transform: translateY(50px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
     }
 
     select, button, input[type="text"] {
@@ -39,11 +52,6 @@
       border-radius: 25px;
       border: 1px solid #87CEEB;
       transition: box-shadow 0.3s ease;
-    }
-
-    select:focus, button:focus, input[type="text"]:focus {
-      box-shadow: 0 0 10px rgba(70, 130, 180, 0.6);
-      outline: none;
     }
 
     button {
@@ -64,70 +72,164 @@
     }
 
     .result {
+      opacity: 1;
+      max-height: 80vh;
+      overflow: auto;
       margin-top: 20px;
-      display: none;
+      display: none; /* 처음에는 보이지 않도록 설정 */
       opacity: 0;
       animation: fadeIn 0.5s forwards;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
     }
 
     .box {
       background-color: white;
       border-radius: 20px;
-      padding: 20px;
+      padding: 10px;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .box:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      margin-bottom: 10px;
     }
 
     .box h2 {
       color: #4682B4;
-      margin-bottom: 10px;
+      margin-bottom: 18px;
     }
 
-    .box p {
-      font-size: 16px;
-      margin: 5px 0;
+    .chat-sidebar {
+      position: fixed;
+      top: 5%;
+      right: -100%;
+      width: 30%;
+      height: 88%;
+      background-color: #f0f8ff;
+      box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
+      border-radius: 30px;
+      transition: right 0.3s ease;
+      padding: 15px;
+      display:none;
+      z-index: 1000;
+    }
+
+    .open-chat-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #4682B4;
+        color: white;
+        padding: 15px;
+        font-size: 20px;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        z-index: 1001;
+        width: 60px;
+        height: 60px;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+    .open-chat-btn:hover {
+        background-color: #315f87;
+        transform: scale(1.1);
+    }
+
+    .open-chat-btn i {
+      font-size: 24px;
+
     }
 
     .chat-container {
-      margin-top: 20px;
-      text-align: left;
-    }
-
-    .chat-container input[type="text"] {
-      width: calc(100% - 20px);
-      margin-right: 5px;
-    }
-
-    .chat-container button {
-      padding: 8px 15px;
-      background-color: #4682B4;
-      color: white;
-      font-size: 14px;
-      border-radius: 15px;
-      cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 10px;
     }
 
     .chat-response {
-      margin-top: 10px;
-      background-color: #f0f8ff;
-      border-radius: 10px;
-      padding: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+       flex: 1;
+       overflow-y: auto;
+       margin-bottom: 25px; /* 아래 여백 */
+       padding: 15px; /* 내용 여백 */
+       background-color: #f9f9f9; /* 밝은 배경색 추가 */
+       border-radius: 30px; /* 둥근 모서리 */
+       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 약간의 그림자 */
     }
+
+    .chat-response p {
+        margin: 10px 0;
+        display: flex;
+        align-items: flex-start;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
+
+    .chat-response p strong {
+        display: none;
+    }
+
+    .chat-response p.user {
+        justify-content: flex-end;
+    }
+
+    .chat-response p.user span {
+        background-color: #87CEEB;
+        color: white;
+        border-radius: 20px 20px 0 20px;
+        padding: 12px 12px 12px 18px;;
+        border-radius: 20px 20px 0 20px;
+        text-align: left;
+        margin-left: auto;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-response p.bot span {
+        background-color: #f0f8ff;
+        color: black;
+        padding: 12px 18px 12px 12px;
+        text-align: left;
+        border-radius: 20px 20px 20px 0;
+        margin-right: auto;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-input {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: auto;
+    }
+    .chat-input input[type="text"] {
+        padding: 15px; /* 여백 증가 */
+        font-size: 14px; /* 글자 크기 */
+        border-radius: 15px;
+        width: 90%;
+        margin: 0 auto;
+        border: 1px solid #87CEEB; /* 경계선 색상 */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 약간의 그림자 */
+    }
+
+    .chat-input button {
+        padding: 12px 15px; /* 버튼 크기 확대 */
+        font-size: 16px; /* 버튼 글자 크기 */
+        border-radius: 20px; /* 둥근 모서리 */
+        border: none; /* 테두리 제거 */
+        background-color: #87CEEB; /* 버튼 배경색 */
+        color: white; /* 버튼 글자색 */
+        cursor: pointer;
+        transition: background-color 0.3s ease; /* 색상 변화 효과 */
+    }
+
+    .chat-input button:hover {
+        background-color: #4682B4; /* 호버 시 색상 */
+    }
+
+
   </style>
   <script>
-    const addressData = {{ address_data|tojson }};
+    let clothingRecommendation = "";
+    let lastAnswer = "";
+    const addressData = {{ address_data | tojson }};
 
     function updateGu() {
       const city = document.getElementById("city").value;
@@ -194,7 +296,14 @@
           const weatherData = await weatherResponse.json();
           if (weatherResponse.ok) {
             hideSelectionUI();
+            clothingRecommendation = weatherData.clothing_recommendation;
             displayResult(city, gu, dong, lat, lon, weatherData);
+
+            const chatButton = document.querySelector(".open-chat-btn");
+            const chatSidebar = document.getElementById("chatSidebar");
+            chatButton.style.display = "block";
+            chatSidebar.style.display = "block";
+
           } else {
             alert(weatherData.error);
           }
@@ -219,39 +328,77 @@
 
     function displayResult(city, gu, dong, lat, lon, weatherData) {
       const resultDiv = document.querySelector(".result");
-      resultDiv.style.display = "block";
+      resultDiv.style.display = "block"; // 결과를 보여주도록 설정
+      resultDiv.style.opacity = "1"; // 애니메이션 적용 시 필요한 설정
+      console.log("displayResult 함수 호출됨:", city, gu, dong, lat, lon, weatherData);
+
+      const formattedClothingRecommendation = weatherData.clothing_recommendation
+        .split('\n') // 먼저 줄 단위로 나눔
+        .map(line =>
+          line.replace(/:/g, ':<br>') // ":" 뒤에 줄바꿈
+              .replace(/,/g, ',<br>') // "," 뒤에 줄바꿈
+              .replace(/- /g, '<br>- ') // "- " 앞에 줄바꿈
+        )
+        .join('<br>'); // 각 줄을 다시 결합
 
       resultDiv.innerHTML = `
         <div class="box">
           <h2>선택된 위치</h2>
           <p>${city} > ${gu} > ${dong}</p>
-          <p>위도: ${lat}, 경도: ${lon}</p>
+          <p>위도: ${lat}<br> 경도: ${lon}</p>
         </div>
         <div class="box">
           <h2>날씨 정보</h2>
-          <p>온도: ${weatherData.main.temp}°C</p>
-          <p>날씨: ${weatherData.weather[0].description}</p>
-          <p>풍속: ${weatherData.wind.speed} m/s</p>
+          <p>온도: ${weatherData.temperature}°C</p>
+          <p>날씨 상태: ${weatherData.sky_status}</p>
+          <p>풍속: ${weatherData.wind_speed} m/s</p>
+          <p>강수 형태: ${weatherData.precipitation_type}</p>
+          <p>강수 확률: ${weatherData.precipitation_probability}%</p>
+          <p>습도: ${weatherData.humidity}%</p>
         </div>
         <div class="box">
           <h2>추천 의류</h2>
-          <p>${weatherData.clothing_recommendation}</p>
-        </div>
-        <div class="chat-container">
-          <input type="text" id="userQuestion" placeholder="궁금한 점을 입력하세요">
-          <button onclick="askQuestion()">질문하기</button>
-          <div id="chatResponse" class="chat-response"></div>
+          <p>${formattedClothingRecommendation}</p>
         </div>
       `;
     }
 
+    function toggleChat() {
+      const chatSidebar = document.getElementById("chatSidebar");
+      const chatButton = document.querySelector(".open-chat-btn");
+      const overlay = document.getElementById("overlay");
+      const body = document.body;
+
+      if(chatSidebar.style.right === "0px") {
+          chatSidebar.style.right = "-100%";
+          chatButton.innerHTML = '<i class = "fa fa-comments"></i>';
+          overlay.style.display = "none";
+          body.classList.remove("blurred");
+
+      }else{
+
+          chatSidebar.style.right = "0px";
+          chatButton.innerHTML = '<i class = "fa fa-home"></i>';
+          overlay.style.display = "block";
+          body.classList.add("blurred");
+      }
+    }
+
     async function askQuestion() {
       const userQuestion = document.getElementById("userQuestion").value;
+      const chatResponse = document.getElementById("chatResponse");
 
       if (!userQuestion) {
         alert("질문을 입력해 주세요.");
         return;
       }
+
+      const userBubble = document.createElement("p");
+      userBubble.className = "user";
+      userBubble.innerHTML = `<span>${userQuestion}</span>`;
+      chatResponse.appendChild(userBubble);
+
+      document.getElementById("userQuestion").value = "";
 
       try {
         const response = await fetch('/ask_question', {
@@ -261,21 +408,27 @@
         });
 
         const data = await response.json();
-        if (response.ok) {
-          document.getElementById("chatResponse").innerHTML = `<p><strong>응답:</strong> ${data.answer}</p>`;
-        } else {
-          document.getElementById("chatResponse").innerHTML = `<p>오류가 발생했습니다: ${data.error}</p>`;
-        }
+        lastAnswer = data.answer;
+
+        const botBubble = document.createElement("p");
+        botBubble.className = "bot";
+        botBubble.innerHTML = `<span>${data.answer}</span>`;
+        chatResponse.appendChild(botBubble);
+
       } catch (error) {
         console.error("오류 발생:", error);
-        alert("서버와의 통신 중 오류가 발생했습니다.");
+        const errorBubble = document.createElement("p");
+        errorBubble.className = "bot";
+        errorBubble.innerHTML = `<span>오류가 발생했습니다. 다시 시도해 주세요.</span>`;
+        chatResponse.appendChild(errorBubble);
       }
+      chatResponse.scrollTop = chatResponse.scrollHeight;
     }
 
     window.onload = function() {
       const citySelect = document.getElementById("city");
       Object.keys(addressData).forEach(city => {
-        if (city !== "열1") {
+        if (city !== "Column3") {
           const option = document.createElement("option");
           option.value = city;
           option.textContent = city;
@@ -286,9 +439,11 @@
       citySelect.addEventListener("change", updateGu);
       document.getElementById("gu").addEventListener("change", updateDong);
     };
+
   </script>
 </head>
 <body>
+<div id="overlay"></div>
 <div class="container">
   <h1>의류 추천 시스템</h1>
   <select id="city"><option value="">시/도 선택</option></select>
@@ -297,5 +452,19 @@
   <button onclick="getWeather()">조회</button>
   <div class="result"></div>
 </div>
+
+<div class="chat-sidebar" id="chatSidebar">
+  <div class="chat-container">
+    <div id="chatResponse" class="chat-response"></div>
+      <div class="chat-input">
+          <input type="text" id="userQuestion" placeholder="궁금한 점을 입력하세요">
+          <button onclick="askQuestion()">질문하기</button>
+      </div>
+
+  </div>
+</div>
+
+<button class="open-chat-btn" onclick="toggleChat()"> <i class="fa fa-comments"></i></button>
+
 </body>
 </html>
