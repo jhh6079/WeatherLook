@@ -27,7 +27,20 @@ async function fetchWeatherData() {
             throw new Error("API 요청 실패 - 상태 코드: " + response.status);
         }
         const responseData = await response.text(); // JSON 대신 text로 읽기
-        console.log(responseData); // 응답 내용을 출력하여 확인
+
+        // XML로 응답이 온 경우 파싱
+        if (responseData.startsWith('<')) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(responseData, "application/xml");
+            console.log(xmlDoc); // XML 응답 확인
+
+            // XML 파싱 후 필요한 데이터 추출
+            const errMsg = xmlDoc.querySelector("errMsg")?.textContent;
+            if (errMsg) {
+                throw new Error("API 오류 메시지: " + errMsg);
+            }
+            return;
+        }
 
         // JSON 파싱 시도
         const data = JSON.parse(responseData);
