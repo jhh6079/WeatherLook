@@ -209,3 +209,14 @@ window.onload = function() {
     citySelect.addEventListener("change", updateGu);
     document.getElementById("gu").addEventListener("change", updateDong);
 };
+
+function saveClothing() {
+    fetch('/save_clothing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clothing: lastAnswer })
+    })
+        .then(response => response.json())
+        .then(data => alert(data.message))
+        .catch(error => console.error('오류 발생:', error));
+}
