@@ -29,7 +29,7 @@ def get_register():
         return jsonify({"message":"ID, PS, 이름 전부 입력바람"}), 400
     
     try: #데이터베이스 연결합니다
-        conn = pymysql.connect(host="127.0.0.1",user="root",password="8176",database="weatherlookdb")
+        conn = pymysql.connect(host="db-weatherlook-builder.ctwe8sgos8o8.us-east-2.rds.amazonaws.com",user="root",password="20020414",database="weatherlookdb")
         cursor = conn.cursor()
         
         #중복체크
