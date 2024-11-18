@@ -4,13 +4,49 @@ from flask import Blueprint, render_template, request, jsonify, current_app
 import requests
 from .utils import load_address_data, convert_to_grid, get_clothing_recommendation
 
+import pymysql
+# db = pymysql.connect(host="127.0.0.1",user="root",password="8176",database="weatherlookdb")
+# cursor = db.cursor()
+
 # Blueprint 생성
 bp = Blueprint('main', __name__)
 weather_info = {}
-@bp.route('/')
+@bp.route('/') #여기서 첫화면만 바꿔서 설정하세요!!!!!@@@
 def index():
     address_data = load_address_data()
-    return render_template('index.html', address_data=address_data)
+    return render_template('signup.html', address_data=address_data)
+    # return render_template('login.html', address_data=address_data)
+    # return render_template('index.html', address_data=address_data)
+
+@bp.route('/register', methods=['POST'])
+def get_register():
+    data = request.get_json()
+    signup_id = data.get('signup_id')
+    signup_ps = data.get('signup_ps')
+    signup_name = data.get('signup_name')
+
+    if not signup_id or not signup_ps or not signup_name:
+        return jsonify({"message":"ID, PS, 이름 전부 입력바람"}), 400
+    
+    try: #데이터베이스 연결합니다
+        conn = pymysql.connect(host="127.0.0.1",user="root",password="8176",database="weatherlookdb")
+        cursor = conn.cursor()
+        
+        #중복체크
+        cursor.execute("select username from weatherlookdb_user where username = %s", (signup_id,))
+        if cursor.fetchone():
+            return jsonify({'message':'아이디가 이미 존재하게되...'}), 409
+        
+        #회원가입 데이터 삽입부분
+        cursor.execute("INSERT INTO weatherlookdb_user (username, password, nickname) VALUES (%s, %s, %s)", (signup_id, signup_ps, signup_name))
+        conn.commit()
+
+        return jsonify({'message':'회원가입 성공! 축하티비'}), 201
+    
+    except pymysql.connect.Error as err:
+        print(f'아이 X발 에러났어: {err}')
+        return jsonify({'message':'db 오류났다능... 킹받는당'}), 500
+
 
 @bp.route('/get_coords', methods=['POST'])
 def get_coords():
