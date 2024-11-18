@@ -92,11 +92,74 @@ async function getWeather() {
     }
 }
 
+function setupHourlyWeatherListener(hourlyData) {
+      const weatherBox = document.querySelector('.result .box:nth-child(2)'); // 날씨 정보 박스
+      weatherBox.style.cursor = "pointer";
+      weatherBox.title = "시간별 날씨 보기";
+      weatherBox.onclick = () => displayHourlyWeather(hourlyData);
+}
+
+function displayHourlyWeather(hourlyData) {
+      console.log("원본 시간별 데이터:", hourlyData);
+
+      const futureData = filterFutureWeather(hourlyData);
+      console.log("필터링된 시간별 데이터:", futureData);
+
+      const modal = document.getElementById("hourlyWeatherModal");
+      const modalContent = document.getElementById("hourlyWeatherContent");
+
+      if (!futureData || futureData.length === 0) {
+        modalContent.innerHTML = "<p>시간별 데이터가 없습니다.</p>";
+      } else {
+          modalContent.innerHTML = `
+            <div class="hourly-weather-row">
+              ${futureData.map(hour => `
+                <div class="hourly-weather-card">
+                   <p><strong>${formatTime(hour.time)}</strong></p>
+                   <p>${hour.temperature}°C</p>
+                </div>
+              `).join('')}
+            </div>
+          `;
+      }
+
+      modal.style.display = "flex";
+}
+
+function filterFutureWeather(hourlyData) {
+      const now = new Date(); // 현재 시각
+      const currentHour = now.getHours(); // 현재 시간 (24시간 형식)
+      const currentMinute = now.getMinutes(); // 현재 분
+
+  // 현재 시각을 HHMM 형식으로 변환
+      const currentTime = `${currentHour.toString().padStart(2, '0')}${currentMinute >= 30 ? '30' : '00'}`;
+
+  // 현재 시각 이후의 데이터만 필터링
+      return hourlyData.filter(hour => parseInt(hour.time, 10) >= parseInt(currentTime, 10));
+}
+
+function closeModal() {
+      const modal = document.getElementById("hourlyWeatherModal");
+      modal.style.display = "none";
+}
+
 function hideSelectionUI() {
     document.getElementById("city").style.display = "none";
     document.getElementById("gu").style.display = "none";
     document.getElementById("dong").style.display = "none";
     document.querySelector("button").style.display = "none";
+}
+
+function formatTime(time) {
+  // 시간 값이 문자열로 들어올 경우 숫자로 변환
+      time = time.toString();
+
+  // 앞 두 자리(시)와 뒤 두 자리(분)로 분리
+      const hours = time.slice(0, 2);
+      const minutes = time.slice(2, 4);
+
+
+      return `${hours}:${minutes}`;
 }
 
 function displayResult(city, gu, dong, lat, lon, weatherData) {
@@ -133,6 +196,10 @@ function displayResult(city, gu, dong, lat, lon, weatherData) {
       <p>${formattedClothingRecommendation}</p>
     </div>
   `;
+
+  console.log("시간별 데이터 확인:", weatherData.hourly);
+      setupHourlyWeatherListener(weatherData.hourly); // 추가
+
 }
 
 function toggleChat() {
