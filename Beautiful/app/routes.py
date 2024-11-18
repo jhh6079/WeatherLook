@@ -42,6 +42,7 @@ def get_weather():
         lat, lon = float(data['lat']), float(data['lon'])
         nx, ny = convert_to_grid(lat, lon)
 
+
         from datetime import datetime, timedelta
         now = datetime.now()
         base_date = now.strftime("%Y%m%d")
@@ -76,9 +77,11 @@ def get_weather():
         }
 
         response = requests.get(url, params=params)
+
         if response.status_code == 200:
             weather_data = response.json()
             items = weather_data['response']['body']['items']['item']
+
             temp = next(item['fcstValue'] for item in items if item['category'] == 'TMP')
             wind_speed = next(item['fcstValue'] for item in items if item['category'] == 'WSD')
             sky_status = next(item['fcstValue'] for item in items if item['category'] == 'SKY')
@@ -91,13 +94,26 @@ def get_weather():
             sky_status_str = sky_status_map.get(sky_status, "알 수 없음")
             precipitation_type_str = precipitation_type_map.get(precipitation_type, "알 수 없음")
 
+            hourly_data = []
+            for item in items:
+                if item['category'] == 'TMP':  # 기온 데이터만 추출
+                    hourly_data.append({
+                        "time": item['fcstTime'],  # 예보 시간
+                        "temperature": item['fcstValue']  # 기온
+                    })
+
+            # 시간별 데이터 정렬
+            hourly_data.sort(key=lambda x: x['time'])
+
             weather_info = {
                 'temperature': temp,
                 'wind_speed': wind_speed,
                 'sky_status': sky_status_str,
                 'precipitation_type': precipitation_type_str,
                 'precipitation_probability': precipitation_probability,
-                'humidity': humidity
+                'humidity': humidity,
+                'hourly': hourly_data
+
             }
 
             recommendation = get_clothing_recommendation(
