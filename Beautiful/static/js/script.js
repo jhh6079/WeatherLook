@@ -68,6 +68,11 @@ async function getWeather() {
 
             const weatherData = await weatherResponse.json();
             if (weatherResponse.ok) {
+
+                 weatherData.hourly = weatherData.hourly.map(hour => ({
+                ...hour,
+                sky_status: hour.sky_status || "정보 없음", // 기본 상태 설정
+            }));
                 hideSelectionUI();
                 clothingRecommendation = weatherData.clothing_recommendation;
                 displayResult(city, gu, dong, lat, lon, weatherData);
@@ -100,30 +105,50 @@ function setupHourlyWeatherListener(hourlyData) {
 }
 
 function displayHourlyWeather(hourlyData) {
-      console.log("원본 시간별 데이터:", hourlyData);
+    const futureData = filterFutureWeather(hourlyData);
+    const modal = document.getElementById("hourlyWeatherModal");
+    const modalContent = document.getElementById("hourlyWeatherContent");
 
-      const futureData = filterFutureWeather(hourlyData);
-      console.log("필터링된 시간별 데이터:", futureData);
-
-      const modal = document.getElementById("hourlyWeatherModal");
-      const modalContent = document.getElementById("hourlyWeatherContent");
-
-      if (!futureData || futureData.length === 0) {
+    if (!futureData || futureData.length === 0) {
         modalContent.innerHTML = "<p>시간별 데이터가 없습니다.</p>";
-      } else {
-          modalContent.innerHTML = `
+    } else {
+        modalContent.innerHTML = `
             <div class="hourly-weather-row">
-              ${futureData.map(hour => `
-                <div class="hourly-weather-card">
-                   <p><strong>${formatTime(hour.time)}</strong></p>
-                   <p>${hour.temperature}°C</p>
-                </div>
-              `).join('')}
+              ${futureData.map(hour => {
+                  const icon = getWeatherIcon(hour.sky_status);
+                  const status = hour.sky_status || "정보 없음";// 날씨 상태에 따른 아이콘 선택
+                  return `
+                    <div class="hourly-weather-card">
+                        <p><strong>${formatTime(hour.time)}</strong></p>
+                        <img src="${icon}" alt="${hour.sky_status}" class="weather-icon"/>
+                        <p>${hour.temperature}°C</p>
+                        <p>${hour.sky_status}</p>
+                    </div>
+                  `;
+              }).join('')}
             </div>
-          `;
-      }
+        `;
+    }
 
-      modal.style.display = "flex";
+    modal.style.display = "flex";
+}
+
+function getWeatherIcon(status) {
+    const icons = {
+        "맑음": "/static/icons/sunny.png",
+        "구름 많음": "/static/icons/cloudy.png",
+        "비": "/static/icons/rainy.png",
+        "눈": "/static/icons/snowy.png",
+        "흐림": "/static/icons/overcast.png"
+
+    };
+    return icons[status] || "/static/icons/default.png"; // 기본 아이콘 설정
+}
+
+
+function closeModal() {
+    const modal = document.getElementById("hourlyWeatherModal");
+    modal.style.display = "none";
 }
 
 function filterFutureWeather(hourlyData) {
@@ -167,6 +192,8 @@ function displayResult(city, gu, dong, lat, lon, weatherData) {
     resultDiv.style.display = "block";
     resultDiv.style.opacity = "1";
 
+    const weatherIcon = getWeatherIcon(weatherData.sky_status);
+
     const formattedClothingRecommendation = weatherData.clothing_recommendation
         .split('\n')
         .map(line =>
@@ -183,8 +210,13 @@ function displayResult(city, gu, dong, lat, lon, weatherData) {
       <p>위도: ${lat}<br> 경도: ${lon}</p>
     </div>
     <div class="box">
+    
       <h2>날씨 정보</h2>
-      <p>온도: ${weatherData.temperature}°C</p>
+      <div class="weather-info">
+        <p style="margin: 0;">온도: ${weatherData.temperature}°C</p>
+        <img src="${weatherIcon}" alt="${weatherData.sky_status}" class="weather-info-icon"/>
+      </div>  
+    
       <p>날씨 상태: ${weatherData.sky_status}</p>
       <p>풍속: ${weatherData.wind_speed} m/s</p>
       <p>강수 형태: ${weatherData.precipitation_type}</p>
@@ -197,7 +229,7 @@ function displayResult(city, gu, dong, lat, lon, weatherData) {
     </div>
   `;
 
-  console.log("시간별 데이터 확인:", weatherData.hourly);
+
       setupHourlyWeatherListener(weatherData.hourly); // 추가
 
 }
@@ -252,12 +284,16 @@ async function askQuestion() {
         botBubble.innerHTML = `<span>${data.answer}</span>`;
         chatResponse.appendChild(botBubble);
 
+        saveClothingButton.style.display = "block";
+
     } catch (error) {
         console.error("오류 발생:", error);
         const errorBubble = document.createElement("p");
         errorBubble.className = "bot";
         errorBubble.innerHTML = `<span>오류가 발생했습니다. 다시 시도해 주세요.</span>`;
         chatResponse.appendChild(errorBubble);
+
+
     }
     chatResponse.scrollTop = chatResponse.scrollHeight;
 }

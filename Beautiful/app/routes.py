@@ -99,7 +99,8 @@ def get_weather():
                 if item['category'] == 'TMP':  # 기온 데이터만 추출
                     hourly_data.append({
                         "time": item['fcstTime'],  # 예보 시간
-                        "temperature": item['fcstValue']  # 기온
+                        "temperature": item['fcstValue'],
+                        "sky_status": sky_status_str,
                     })
 
             # 시간별 데이터 정렬
