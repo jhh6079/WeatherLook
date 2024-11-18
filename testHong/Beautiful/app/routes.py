@@ -4,48 +4,15 @@ from flask import Blueprint, render_template, request, jsonify, current_app
 import requests
 from .utils import load_address_data, convert_to_grid, get_clothing_recommendation
 
-import pymysql
-# db = pymysql.connect(host="127.0.0.1",user="root",password="8176",database="weatherlookdb")
-# cursor = db.cursor()
-
 # Blueprint 생성
 bp = Blueprint('main', __name__)
 weather_info = {}
-@bp.route('/') #여기서 첫화면만 바꿔서 설정하세요!!!!!@@@
+
+
+@bp.route('/')
 def index():
     address_data = load_address_data()
-    return render_template('signup.html', address_data=address_data)
-    # return render_template('login.html', address_data=address_data)
-    # return render_template('index.html', address_data=address_data)
-
-@bp.route('/register', methods=['POST'])
-def get_register():
-    data = request.get_json()
-    signup_id = data.get('signup_id')
-    signup_ps = data.get('signup_ps')
-    signup_name = data.get('signup_name')
-
-    if not signup_id or not signup_ps or not signup_name:
-        return jsonify({"message":"ID, PS, 이름 전부 입력바람"}), 400
-    
-    try: #데이터베이스 연결합니다
-        conn = pymysql.connect(host="db-weatherlook-builder.ctwe8sgos8o8.us-east-2.rds.amazonaws.com",user="root",password="20020414",database="weatherlookdb")
-        cursor = conn.cursor()
-        
-        #중복체크
-        cursor.execute("select username from weatherlookdb_user where username = %s", (signup_id,))
-        if cursor.fetchone():
-            return jsonify({'message':'아이디가 이미 존재하게되...'}), 409
-        
-        #회원가입 데이터 삽입부분
-        cursor.execute("INSERT INTO weatherlookdb_user (username, password, nickname) VALUES (%s, %s, %s)", (signup_id, signup_ps, signup_name))
-        conn.commit()
-
-        return jsonify({'message':'회원가입 성공! 축하티비'}), 201
-    
-    except pymysql.connect.Error as err:
-        print(f'아이 X발 에러났어: {err}')
-        return jsonify({'message':'db 오류났다능... 킹받는당'}), 500
+    return render_template('index.html', address_data=address_data)
 
 
 @bp.route('/get_coords', methods=['POST'])
@@ -70,6 +37,7 @@ def get_coords():
         print(f"오류 발생: {e}")
         return jsonify({'error': '서버 오류가 발생했습니다.'}), 500
 
+
 @bp.route('/get_weather', methods=['POST'])
 def get_weather():
     global weather_info  # 전역 변수 사용
@@ -77,7 +45,6 @@ def get_weather():
         data = request.json
         lat, lon = float(data['lat']), float(data['lon'])
         nx, ny = convert_to_grid(lat, lon)
-
 
         from datetime import datetime, timedelta
         now = datetime.now()
@@ -113,11 +80,9 @@ def get_weather():
         }
 
         response = requests.get(url, params=params)
-
         if response.status_code == 200:
             weather_data = response.json()
             items = weather_data['response']['body']['items']['item']
-
             temp = next(item['fcstValue'] for item in items if item['category'] == 'TMP')
             wind_speed = next(item['fcstValue'] for item in items if item['category'] == 'WSD')
             sky_status = next(item['fcstValue'] for item in items if item['category'] == 'SKY')
@@ -130,27 +95,13 @@ def get_weather():
             sky_status_str = sky_status_map.get(sky_status, "알 수 없음")
             precipitation_type_str = precipitation_type_map.get(precipitation_type, "알 수 없음")
 
-            hourly_data = []
-            for item in items:
-                if item['category'] == 'TMP':  # 기온 데이터만 추출
-                    hourly_data.append({
-                        "time": item['fcstTime'],  # 예보 시간
-                        "temperature": item['fcstValue'],
-                        "sky_status": sky_status_str,
-                    })
-
-            # 시간별 데이터 정렬
-            hourly_data.sort(key=lambda x: x['time'])
-
             weather_info = {
                 'temperature': temp,
                 'wind_speed': wind_speed,
                 'sky_status': sky_status_str,
                 'precipitation_type': precipitation_type_str,
                 'precipitation_probability': precipitation_probability,
-                'humidity': humidity,
-                'hourly': hourly_data
-
+                'humidity': humidity
             }
 
             recommendation = get_clothing_recommendation(
@@ -188,7 +139,8 @@ def ask_question():
         response = openai.ChatCompletion.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": f"당신은 날씨 전문가입니다. {additional_info} 날씨에 따른 적절한 의류를 추천하지만, 이외의 다른 날씨와 관련없는 질문에는 대답하지마.  "},
+                {"role": "system",
+                 "content": f"당신은 날씨 전문가입니다. {additional_info} 날씨에 따른 적절한 의류를 추천하지만, 이외의 다른 날씨와 관련없는 질문에는 대답하지마.  "},
                 {"role": "user", "content": question},
             ]
         )
@@ -200,6 +152,7 @@ def ask_question():
     except Exception as e:
         print(f"오류 발생: {e}")
         return jsonify({"error": "서버 오류가 발생했습니다."}), 500
+
 
 @bp.route('/save_clothing', methods=['POST'])
 def save_clothing():
@@ -244,3 +197,10 @@ def save_clothing():
     except Exception as e:
         print(f"오류 발생: {e}")
         return jsonify({"error": "출력 중 오류가 발생했습니다."}), 500
+
+
+
+@bp.route('/rank')
+def rank():
+    address_data = {}  # 혹은 적절한 데이터를 여기에 넣으세요.
+    return render_template("rank.html", address_data=address_data)
