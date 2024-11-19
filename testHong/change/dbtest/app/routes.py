@@ -1,8 +1,9 @@
 # app/routes.py
 import openai
-from flask import Blueprint, render_template, request, jsonify, current_app
+from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for
 import requests
-from .utils import load_address_data, convert_to_grid, get_clothing_recommendation, get_weather_icon
+from .utils import load_address_data, convert_to_grid, get_clothing_recommendation, get_weather_icon, \
+    perceived_temperature
 
 import pymysql
 
@@ -14,12 +15,9 @@ bp = Blueprint('main', __name__)
 weather_info = {}
 
 
-@bp.route('/')  # 여기서 첫화면만 바꿔서 설정하세요!!!!!@@@
+@bp.route('/')  # 루트 경로
 def index():
-    address_data = load_address_data()
-    # return render_template('signup.html', address_data=address_data)
-    # return render_template('login.html', address_data=address_data)
-    return render_template('index.html', address_data=address_data)
+    return redirect(url_for('main.main'))  # '/main'으로 리디렉션
 
 
 # 메인 페이지 라우트
@@ -133,6 +131,15 @@ def result():
                     "temperature": item['fcstValue']  # 기온
                 })
 
+        # 현재 시간을 HHMM 형식으로 변환 (예: 13:37 -> "1400")
+        if now.minute >= 0:
+            current_time = (now + timedelta(hours=1)).replace(minute=0).strftime("%H%M")
+        else:
+            current_time = now.replace(minute=0).strftime("%H%M")
+
+        # 현재 시간 이후의 데이터만 필터링
+        hourly_data = [data for data in hourly_data if int(data['time']) >= int(current_time)]
+
         # 시간별 데이터 정렬
         hourly_data.sort(key=lambda x: x['time'])
 
@@ -149,11 +156,15 @@ def result():
                                 "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt1.svg")
 
         weather_icon_url = get_weather_icon(sky_status_str)
-
+        # 체감 온도 생성
+        perceived_temp = perceived_temperature(
+            temp, wind_speed, sky_status_str, precipitation_probability,
+            current_app.config['OPENAI_API_KEY']
+        )
         # 의류 추천 생성
         recommendation = get_clothing_recommendation(
             temp, wind_speed, sky_status_str, precipitation_probability,
-            current_app.config['OPENAI_API_KEY']
+            current_app.config['OPENAI_API_KEY'], perceived_temp
         )
 
         # HTML 페이지로 데이터 전달
@@ -172,7 +183,9 @@ def result():
             humidity=humidity,
             clothing_recommendation=recommendation,
             hourly_data=hourly_data,
-            weather_icon_url=weather_icon_url  # 아이콘 URL 전달
+            weather_icon_url=weather_icon_url,  # 아이콘 URL 전달
+            perceived_temp=perceived_temp
+
         )
 
     except Exception as e:

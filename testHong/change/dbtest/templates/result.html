@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>날씨 결과</title>
@@ -24,11 +25,9 @@
     <!-- 선택된 위치 -->
     <div class="box">
         <h2>선택된 위치</h2>
-        <p>시/도: {{ city }}</p>
-        <p>구/군: {{ gu }}</p>
-        <p>읍/면/동: {{ dong }}</p>
-        <p>위도: {{ lat }}</p>
-        <p>경도: {{ lon }}</p>
+        <div class="selected-location">
+            <p>{{ city }} > {{ gu }} > {{ dong }}</p>
+        </div>
     </div>
 
     <!-- 날씨 정보 -->
@@ -53,7 +52,7 @@
             </div>
             <div class="detail">
                 <span>체감온도</span>
-                <span>{{ temperature }}°C</span>
+                <span>{{ perceived_temp }}°C</span>
             </div>
         </div>
     </div>

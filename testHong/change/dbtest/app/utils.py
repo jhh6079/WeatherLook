@@ -3,6 +3,7 @@ import pandas as pd
 import math
 import openai
 
+
 # 주소 데이터 로드 함수
 def load_address_data():
     df = pd.read_excel("전국_읍면동_주소.xlsx")
@@ -21,6 +22,7 @@ def load_address_data():
             address_dict[city][gu] = []
         address_dict[city][gu].append(dong)
     return address_dict
+
 
 # 좌표 변환 함수
 def convert_to_grid(lat, lon):
@@ -60,10 +62,11 @@ def convert_to_grid(lat, lon):
     ny = int(math.floor(ro - ra * math.cos(theta) + YO + 0.5))
     return nx, ny
 
+
 # 의류 추천 함수
-def get_clothing_recommendation(temp, wind_speed, sky_status, precipitation_probability, openai_api_key):
+def get_clothing_recommendation(temp, wind_speed, sky_status, precipitation_probability, openai_api_key, perceived_temp):
     prompt = (
-        f"현재 온도는 {temp}도이고, 풍속은 {wind_speed} m/s, 날씨는 {sky_status}, 강수확률은 {precipitation_probability}%입니다. "
+        f"현재 온도는 {temp}도이고, 풍속은 {wind_speed} m/s, 날씨는 {sky_status}, 강수확률은 {precipitation_probability}%, 체감온도는 {perceived_temp} 입니다. , "
         "설명 없이 체감 온도만 보여주고 체감온도에 맞는 적절한 의류를 추천해줘"
     )
     openai.api_key = openai_api_key
@@ -76,6 +79,31 @@ def get_clothing_recommendation(temp, wind_speed, sky_status, precipitation_prob
     )
     return response.choices[0].message['content']
 
+
+def perceived_temperature(temp, wind_speed, sky_status, precipitation_probability, openai_api_key):
+    prompt = (
+        f"""
+        현재 온도는 {temp}도이고, 풍속은 {wind_speed} m/s, 날씨는 {sky_status}, 강수확률은 {precipitation_probability}%입니다.
+        다른 설명 없이 체감 온도를 **숫자만** 알려줘.
+
+        예시 질문: 현재 온도는 15도이고, 풍속은 3.5 m/s, 날씨는 맑음, 강수확률은 10%입니다.
+        예시 답안: 13
+        
+        답변은 반드시 숫자만 포함해야 합니다.
+        """
+
+    )
+    openai.api_key = openai_api_key
+    response = openai.ChatCompletion.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "당신은 날씨 전문가입니다."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return response.choices[0].message['content']
+
+
 def get_weather_icon(sky_status):
     icon_map = {
         "맑음": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt1.svg",
@@ -85,4 +113,5 @@ def get_weather_icon(sky_status):
         "눈": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt5.svg",
         # 필요한 날씨 상태와 아이콘을 추가
     }
-    return icon_map.get(sky_status, "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt1.svg")
+    return icon_map.get(sky_status,
+                        "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt1.svg")
