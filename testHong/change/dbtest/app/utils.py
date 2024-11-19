@@ -75,3 +75,14 @@ def get_clothing_recommendation(temp, wind_speed, sky_status, precipitation_prob
         ]
     )
     return response.choices[0].message['content']
+
+def get_weather_icon(sky_status):
+    icon_map = {
+        "맑음": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt1.svg",
+        "구름 많음": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt2.svg",
+        "흐림": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt3.svg",
+        "비": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt4.svg",
+        "눈": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt5.svg",
+        # 필요한 날씨 상태와 아이콘을 추가
+    }
+    return icon_map.get(sky_status, "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt1.svg")

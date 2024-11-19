@@ -2,7 +2,7 @@
 import openai
 from flask import Blueprint, render_template, request, jsonify, current_app
 import requests
-from .utils import load_address_data, convert_to_grid, get_clothing_recommendation
+from .utils import load_address_data, convert_to_grid, get_clothing_recommendation, get_weather_icon
 
 import pymysql
 
@@ -36,6 +36,8 @@ def rank():
     address_data = load_address_data()
     # rank.html 렌더링과 함께 address_data 전달
     return render_template('rank.html', address_data=address_data)
+
+
 @bp.route('/result', methods=['POST'])
 def result():
     try:
@@ -134,6 +136,20 @@ def result():
         # 시간별 데이터 정렬
         hourly_data.sort(key=lambda x: x['time'])
 
+        # 날씨 아이콘 URL 결정
+        def get_weather_icon(sky_status):
+            icon_map = {
+                "맑음": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt1.svg",
+                "구름 많음": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt5.svg",
+                "흐림": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt7.svg",
+                "비": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt9.svg",
+                "눈": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt12.svg",
+            }
+            return icon_map.get(sky_status,
+                                "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt1.svg")
+
+        weather_icon_url = get_weather_icon(sky_status_str)
+
         # 의류 추천 생성
         recommendation = get_clothing_recommendation(
             temp, wind_speed, sky_status_str, precipitation_probability,
@@ -155,12 +171,14 @@ def result():
             precipitation_probability=precipitation_probability,
             humidity=humidity,
             clothing_recommendation=recommendation,
-            hourly_data=hourly_data
+            hourly_data=hourly_data,
+            weather_icon_url=weather_icon_url  # 아이콘 URL 전달
         )
 
     except Exception as e:
         print(f"오류 발생: {e}")
         return render_template('error.html', message="서버 오류가 발생했습니다."), 500
+
 
 @bp.route('/register', methods=['POST'])
 def get_register():
