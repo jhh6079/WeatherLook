@@ -82,23 +82,17 @@ def result():
         else:
             base_time = "2300"
 
-        if now.minute >= 30:
-            forecast_time = (now + timedelta(hours=1)).replace(minute=0).strftime("%H%M")
-        else:
-            forecast_time = now.replace(minute=0).strftime("%H%M")
-
         # 기상청 API 호출
         weather_url = f"http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst"
         params = {
             "serviceKey": current_app.config['WEATHER_API_KEY'],
-            "numOfRows": 100,
+            "numOfRows": 300,  # 충분한 데이터 확보를 위해 큰 값 설정
             "pageNo": 1,
             "dataType": "JSON",
             "base_date": base_date,
             "base_time": base_time,
             "nx": nx,
-            "ny": ny,
-            "fcstTime": forecast_time
+            "ny": ny
         }
 
         weather_response = requests.get(weather_url, params=params)
@@ -122,26 +116,32 @@ def result():
         sky_status_str = sky_status_map.get(sky_status, "알 수 없음")
         precipitation_type_str = precipitation_type_map.get(precipitation_type, "알 수 없음")
 
-        # 시간별 데이터 처리
+        # 현재 시간 및 24시간 이후 시간 계산
+        now_date = now.strftime("%Y%m%d")
+        current_time = (now + timedelta(hours=1)).replace(minute=0, second=0).strftime("%H%M")
+        end_time = now + timedelta(hours=24)
+        end_date = end_time.strftime("%Y%m%d")
+        end_time_str = end_time.strftime("%H%M")
+
+        # 시간별 데이터 필터링
         hourly_data = []
         for item in items:
-            if item['category'] == 'TMP':  # 기온 데이터만 추출
+            if item['category'] == 'TMP':  # TMP는 기온 데이터
                 hourly_data.append({
-                    "time": item['fcstTime'],  # 예보 시간
-                    "temperature": item['fcstValue']  # 기온
+                    "date": item['fcstDate'],
+                    "time": item['fcstTime'],
+                    "temperature": item['fcstValue']
                 })
 
-        # 현재 시간을 HHMM 형식으로 변환 (예: 13:37 -> "1400")
-        if now.minute >= 0:
-            current_time = (now + timedelta(hours=1)).replace(minute=0).strftime("%H%M")
-        else:
-            current_time = now.replace(minute=0).strftime("%H%M")
+        # 현재 시간부터 24시간 이후까지의 데이터만 필터링
+        filtered_data = [
+            data for data in hourly_data
+            if (data['date'] > now_date or (data['date'] == now_date and int(data['time']) >= int(current_time))) and
+               (data['date'] < end_date or (data['date'] == end_date and int(data['time']) <= int(end_time_str)))
+        ]
 
-        # 현재 시간 이후의 데이터만 필터링
-        hourly_data = [data for data in hourly_data if int(data['time']) >= int(current_time)]
-
-        # 시간별 데이터 정렬
-        hourly_data.sort(key=lambda x: x['time'])
+        # 데이터 정렬
+        filtered_data.sort(key=lambda x: (x['date'], x['time']))
 
         # 날씨 아이콘 URL 결정
         def get_weather_icon(sky_status):
@@ -152,15 +152,16 @@ def result():
                 "비": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt9.svg",
                 "눈": "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt12.svg",
             }
-            return icon_map.get(sky_status,
-                                "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt1.svg")
+            return icon_map.get(sky_status, "https://ssl.pstatic.net/sstatic/keypage/outside/scui/weather_new_new/img/weather_svg/icon_flat_wt1.svg")
 
         weather_icon_url = get_weather_icon(sky_status_str)
+
         # 체감 온도 생성
         perceived_temp = perceived_temperature(
             temp, wind_speed, sky_status_str, precipitation_probability,
             current_app.config['OPENAI_API_KEY']
         )
+
         # 의류 추천 생성
         recommendation = get_clothing_recommendation(
             temp, wind_speed, sky_status_str, precipitation_probability,
@@ -182,16 +183,14 @@ def result():
             precipitation_probability=precipitation_probability,
             humidity=humidity,
             clothing_recommendation=recommendation,
-            hourly_data=hourly_data,
-            weather_icon_url=weather_icon_url,  # 아이콘 URL 전달
+            hourly_data=filtered_data,
+            weather_icon_url=weather_icon_url,
             perceived_temp=perceived_temp
-
         )
 
     except Exception as e:
         print(f"오류 발생: {e}")
         return render_template('error.html', message="서버 오류가 발생했습니다."), 500
-
 
 @bp.route('/register', methods=['POST'])
 def get_register():
