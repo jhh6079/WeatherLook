@@ -1,3 +1,4 @@
+/*전체 배경*/
 body {
     display: flex;
     justify-content: center;
@@ -5,7 +6,7 @@ body {
     height: 100vh;
     margin: 0;
     font-family: 'Arial', sans-serif;
-    background: linear-gradient(135deg, #87CEEB, #f0f8ff);
+    background: #C2C2C2;
 }
 
 body.blurred .container {
@@ -25,9 +26,10 @@ body.blurred .container {
     transition: opacity 0.3s ease;
 }
 
+
 .container {
     text-align: center;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(247, 247, 247, 0.9);
     padding: 30px;
     border-radius: 30px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
@@ -36,28 +38,34 @@ body.blurred .container {
     animation: slideIn 0.5s ease-out;
 }
 
+/*로고 사이즈*/
+.logo {
+    max-width: 40%; /* 부모 요소 크기에 맞게 조정 */
+    height: auto;    /* 비율 유지 */
+}
+/*텍스트 박스*/
 select, button, input[type="text"] {
     margin: 10px 0;
     width: 100%;
     padding: 15px;
     font-size: 18px;
-    border-radius: 25px;
-    border: 1px solid #87CEEB;
+    border-radius: 15px;
+    border: 1px solid #9E9E9E;
     transition: box-shadow 0.3s ease;
 }
-
+/*버튼*/
 button {
-    background-color: #87CEEB;
+    background-color: #787878;
     color: white;
     border: none;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
-
+/*버튼 위에 커서*/
 button:hover {
-    background-color: #4682B4;
+    background-color: #646464;
 }
-
+/**/
 button:disabled {
     background-color: #b0c4de;
     cursor: not-allowed;

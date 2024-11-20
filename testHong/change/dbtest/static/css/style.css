@@ -1,3 +1,4 @@
+/*전체 배경*/
 body {
     display: flex;
     justify-content: center;
@@ -5,7 +6,7 @@ body {
     height: 100vh;
     margin: 0;
     font-family: 'Arial', sans-serif;
-    background: linear-gradient(135deg, #87CEEB, #f0f8ff);
+    background: #C2C2C2;
 }
 
 body.blurred .container {
@@ -89,13 +90,13 @@ body.blurred .container {
 .weather-info {
     display: flex;
     flex-direction: column; /* 세로 방향 정렬 */
-    align-items: center;    /* 중앙 정렬 */
-    gap: 5px;               /* 텍스트와 아이콘 간격 */
-    margin: 10px 0;         /* 상하 여백 */
+    align-items: center; /* 중앙 정렬 */
+    gap: 5px; /* 텍스트와 아이콘 간격 */
+    margin: 10px 0; /* 상하 여백 */
 }
 
 .weather-info-icon {
-    width: 30px;  /* 아이콘 크기 */
+    width: 30px; /* 아이콘 크기 */
     height: 30px; /* 아이콘 크기 */
 }
 
@@ -106,7 +107,7 @@ body.blurred .container {
 
 .container {
     text-align: center;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(247, 247, 247, 0.9);
     padding: 30px;
     border-radius: 30px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
@@ -115,28 +116,38 @@ body.blurred .container {
     animation: slideIn 0.5s ease-out;
 }
 
+/*로고 사이즈*/
+.logo {
+    max-width: 40%; /* 부모 요소 크기에 맞게 조정 */
+    height: auto; /* 비율 유지 */
+}
+
+/*텍스트 박스*/
 select, button, input[type="text"] {
     margin: 10px 0;
     width: 100%;
     padding: 15px;
     font-size: 18px;
-    border-radius: 25px;
-    border: 1px solid #87CEEB;
+    border-radius: 15px;
+    border: 1px solid #9E9E9E;
     transition: box-shadow 0.3s ease;
 }
 
+/*버튼*/
 button {
-    background-color: #87CEEB;
+    background-color: #787878;
     color: white;
     border: none;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
 
+/*버튼 위에 커서*/
 button:hover {
-    background-color: #4682B4;
+    background-color: #646464;
 }
 
+/**/
 button:disabled {
     background-color: #b0c4de;
     cursor: not-allowed;
@@ -186,7 +197,7 @@ button:disabled {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background-color: #4682B4;
+    background-color: #787878;
     color: white;
     padding: 15px;
     font-size: 20px;
@@ -204,7 +215,7 @@ button:disabled {
 }
 
 .open-chat-btn:hover {
-    background-color: #315f87;
+    background-color: #646464;
     transform: scale(1.1);
 }
 
@@ -279,7 +290,7 @@ button:disabled {
     font-size: 16px;
     border-radius: 20px;
     border: none;
-    background-color: #87CEEB;
+    background-color: #787878;
     color: white;
     cursor: pointer;
     transition: background-color 0.3s ease;
@@ -302,8 +313,9 @@ button:disabled {
 }
 
 .chat-input button:hover {
-    background-color: #4682B4;
+    background-color: #646464;
 }
+
 /* 네비게이션 바 스타일 */
 .navbar {
     background-color: #222; /* 네비게이션 바 배경색 */
@@ -391,4 +403,3 @@ button:disabled {
     font-size: 16px;
     color: #333;
 }
-
