@@ -71,9 +71,10 @@ body.blurred .container {
     gap: 10px; /* 각 아이템 간격 */
 }
 
+/*시간별 날씨 정보 개별 박스*/
 .hourly-weather-card {
     flex: 0 0 auto;
-    background-color: #f0f8ff;
+    background-color: #F7F7F7;
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     padding: 10px;
@@ -104,7 +105,7 @@ body.blurred .container {
     margin: 5px 0;
 }
 
-
+/*전체를 감싸는 박스*/
 .container {
     text-align: center;
     background-color: rgba(247, 247, 247, 0.9);
@@ -120,6 +121,12 @@ body.blurred .container {
 .logo {
     max-width: 40%; /* 부모 요소 크기에 맞게 조정 */
     height: auto; /* 비율 유지 */
+}
+
+.logo-result{
+    max-width: 30%; /* 부모 요소 크기에 맞게 조정 */
+    height: auto; /* 비율 유지 */
+    padding: 10px;
 }
 
 /*텍스트 박스*/
@@ -172,8 +179,9 @@ button:disabled {
     margin-bottom: 10px;
 }
 
+/*h2에 해당하는 box의 css*/
 .box h2 {
-    color: #4682B4;
+    color: #353535;
     margin-bottom: 18px;
 }
 
@@ -369,18 +377,20 @@ button:disabled {
     margin-right: 10px;
 }
 
+/*현재 날씨 글자 색*/
 .temperature {
     font-size: 36px;
     font-weight: bold;
-    color: #333;
+    color: #353535;
 }
-
+/*날씨 상태(흐림, 맑음 등등)*/
 .sky-status {
     font-size: 18px;
-    color: #666;
+    color: #5D5D5D;
     margin-bottom: 15px;
 }
 
+/*습도 풍속 강수확률 체감온도*/
 .weather-details {
     display: flex;
     justify-content: space-around;
@@ -388,6 +398,7 @@ button:disabled {
     color: #444;
 }
 
+/*디테일 전체 가운데 정렬*/
 .detail {
     text-align: center;
 }
